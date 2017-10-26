@@ -68,15 +68,15 @@ type Log struct {
 }
 
 func New() *Log {
-	if os.Getenv("LOGGER_SERVICE") == "" || os.Getenv("LOGGER_VERSION") == "" {
-		fmt.Errorf("cannot instantiate the logger, make sure the LOGGER_SERVICE and LOGGER_VERSION environment vars are set correctly")
+	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
+		fmt.Errorf("cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
 	}
 
 	return &Log{
 		Payload: &Payload{
 			ServiceContext: &ServiceContext{
-				Service: os.Getenv("LOGGER_SERVICE"),
-				Version: os.Getenv("LOGGER_VERSION"),
+				Service: os.Getenv("SERVICE"),
+				Version: os.Getenv("VERSION"),
 			},
 		},
 		writer: os.Stdout,

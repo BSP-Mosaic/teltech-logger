@@ -14,8 +14,8 @@ type LogFunc func(message string)
 const OUTFILE = "out.json"
 
 func setEnv() {
-	os.Setenv("LOGGER_SERVICE", "robokiller-ivr")
-	os.Setenv("LOGGER_VERSION", "1.0")
+	os.Setenv("SERVICE", "robokiller-ivr")
+	os.Setenv("VERSION", "1.0")
 }
 
 func createOutFile() *os.File {

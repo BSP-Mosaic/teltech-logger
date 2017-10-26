@@ -21,8 +21,8 @@ import (
 
 func main() {
     // Stackdriver requires a project name and version to be set. Use your environment for these values.
-    // LOGGER_SERVICE should be your GCP project-id, e.g. robokiller-146813
-    // LOGGER_VERSION is an arbitrary value
+    // SERVICE should be your GCP project-id, e.g. robokiller-146813
+    // VERSION is an arbitrary value
     log, err := log.New()
     if err != nil {
         fmt.Errorf("cannot initiate logger")
