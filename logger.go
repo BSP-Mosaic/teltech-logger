@@ -17,6 +17,7 @@ const (
 	info
 	warn
 	error
+	critical
 )
 
 func (s severity) String() string {
@@ -28,13 +29,15 @@ var logLevelName = [...]string{
 	"INFO",
 	"WARN",
 	"ERROR",
+	"CRITICAL",
 }
 
 var logLevelValue = map[string]severity{
-	"DEBUG": debug,
-	"INFO":  info,
-	"WARN":  warn,
-	"ERROR": error,
+	"DEBUG":    debug,
+	"INFO":     info,
+	"WARN":     warn,
+	"ERROR":    error,
+	"CRITICAL": critical,
 }
 
 // Fields is used to wrap the log entries payload
@@ -119,7 +122,7 @@ func New() *Log {
 
 	return &Log{
 		payload: p,
-		writer: os.Stdout,
+		writer:  os.Stdout,
 	}
 }
 
@@ -220,6 +223,29 @@ func (l Log) Warnf(message string, args ...interface{}) {
 
 // Error prints out a message with ERROR severity level
 func (l Log) Error(message string) {
+	l.error(error.String(), message)
+}
+
+// Errorf prints out a message with ERROR severity level
+func (l Log) Errorf(message string, args ...interface{}) {
+	l.Error(fmt.Sprintf(message, args...))
+}
+
+// Fatal is equivalent to Error() followed by a call to os.Exit(1).
+// It prints out a message with CRITICAL severity level
+func (l Log) Fatal(message string) {
+	l.error(critical.String(), message)
+	os.Exit(1)
+}
+
+// Fatalf is equivalent to Errorf() followed by a call to os.Exit(1).
+// It prints out a message with CRITICAL severity level
+func (l Log) Fatalf(message string, args ...interface{}) {
+	l.Fatal(fmt.Sprintf(message, args...))
+}
+
+// error prints out a message with the passed severity level (ERROR or CRITICAL)
+func (l Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
 	_, file, line, _ := runtime.Caller(1)
@@ -244,10 +270,5 @@ func (l Log) Error(message string) {
 		Stacktrace: string(bytes.Trim(buffer, "\x00")),
 	}
 
-	l.log(error.String(), message)
-}
-
-// Errorf prints out a message with ERROR severity level
-func (l Log) Errorf(message string, args ...interface{}) {
-	l.Error(fmt.Sprintf(message, args...))
+	l.log(severity, message)
 }
