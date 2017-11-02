@@ -223,46 +223,34 @@ func (l Log) Warnf(message string, args ...interface{}) {
 
 // Error prints out a message with ERROR severity level
 func (l Log) Error(message string) {
-	buffer := make([]byte, 1024)
-	runtime.Stack(buffer, false)
-	_, file, line, _ := runtime.Caller(1)
-
-	l.error(ERROR.String(), message, buffer, file, line)
+	l.error(ERROR.String(), message)
 }
 
 // Errorf prints out a message with ERROR severity level
 func (l Log) Errorf(message string, args ...interface{}) {
-	buffer := make([]byte, 1024)
-	runtime.Stack(buffer, false)
-	_, file, line, _ := runtime.Caller(1)
-
-	l.error(ERROR.String(), fmt.Sprintf(message, args...), buffer, file, line)
+	l.error(ERROR.String(), fmt.Sprintf(message, args...))
 }
 
 // Fatal is equivalent to Error() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
 func (l Log) Fatal(message string) {
-	buffer := make([]byte, 1024)
-	runtime.Stack(buffer, false)
-	_, file, line, _ := runtime.Caller(1)
-
-	l.error(CRITICAL.String(), message, buffer, file, line)
+	l.error(CRITICAL.String(), message)
 	os.Exit(1)
 }
 
 // Fatalf is equivalent to Errorf() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
 func (l Log) Fatalf(message string, args ...interface{}) {
-	buffer := make([]byte, 1024)
-	runtime.Stack(buffer, false)
-	_, file, line, _ := runtime.Caller(1)
-
-	l.error(CRITICAL.String(), fmt.Sprintf(message, args...), buffer, file, line)
+	l.error(CRITICAL.String(), fmt.Sprintf(message, args...))
 	os.Exit(1)
 }
 
 // ERROR prints out a message with the passed severity level (ERROR or CRITICAL)
-func (l Log) error(severity, message string, buffer []byte, file string, line int) {
+func (l Log) error(severity, message string) {
+	buffer := make([]byte, 1024)
+	runtime.Stack(buffer, false)
+	_, file, line, _ := runtime.Caller(2)
+
 	// Set the data when the context is empty
 	if l.payload.Context == nil {
 		l.payload.Context = &Context{
