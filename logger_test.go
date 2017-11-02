@@ -149,7 +149,6 @@ func TestLoggerWithDifferentLogLevels(t *testing.T) {
 	// Clean-up the buffer in preparation for new assertions
 	buf.Reset()
 
-	// should print ERROR as well
 	log.Error("ERROR message")
 	expected = fmt.Sprintf("{\"severity\":\"ERROR\",\"eventTime\":\"%s\",\"message\":\"ERROR message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerError\",\"key\":\"value\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
