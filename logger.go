@@ -13,11 +13,11 @@ import (
 type severity int
 
 const (
-	debug severity = iota
-	info
-	warn
-	error
-	critical
+	DEBUG severity = iota
+	INFO
+	WARN
+	ERROR
+	CRITICAL
 )
 
 func (s severity) String() string {
@@ -33,11 +33,11 @@ var logLevelName = [...]string{
 }
 
 var logLevelValue = map[string]severity{
-	"DEBUG":    debug,
-	"INFO":     info,
-	"WARN":     warn,
-	"ERROR":    error,
-	"CRITICAL": critical,
+	"DEBUG":    DEBUG,
+	"INFO":     INFO,
+	"WARN":     WARN,
+	"ERROR":    ERROR,
+	"CRITICAL": CRITICAL,
 }
 
 // Fields is used to wrap the log entries payload
@@ -88,14 +88,14 @@ var (
 func init() {
 	ll, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
 	if !ok {
-		fmt.Println("logger warn: LOG_LEVEL is not valid or not set, defaulting to INFO")
-		logLevel = logLevelValue[info.String()]
+		fmt.Println("logger WARN: LOG_LEVEL is not valid or not set, defaulting to INFO")
+		logLevel = logLevelValue[INFO.String()]
 	} else {
 		logLevel = ll
 	}
 
 	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
-		fmt.Println("logger error: cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
+		fmt.Println("logger ERROR: cannot instantiate the logger, make sure the SERVICE and VERSION environment vars are set correctly")
 	}
 
 	initConfig(logLevel, os.Getenv("SERVICE"), os.Getenv("VERSION"))
@@ -145,7 +145,7 @@ func (l *Log) log(severity, message string) {
 
 	payload, ok := json.Marshal(l.payload)
 	if ok != nil {
-		fmt.Printf("logger error: cannot marshal payload: %s", ok.Error())
+		fmt.Printf("logger ERROR: cannot marshal payload: %s", ok.Error())
 	}
 
 	fmt.Fprintln(l.writer, string(payload))
@@ -172,11 +172,11 @@ func (l Log) With(fields Fields) Log {
 
 // Debug prints out a message with DEBUG severity level
 func (l Log) Debug(message string) {
-	if !isValidLogLevel(debug) {
+	if !isValidLogLevel(DEBUG) {
 		return
 	}
 
-	l.log(debug.String(), message)
+	l.log(DEBUG.String(), message)
 }
 
 // Debugf prints out a message with DEBUG severity level
@@ -186,20 +186,20 @@ func (l Log) Debugf(message string, args ...interface{}) {
 
 // Metric prints out a message with INFO severity and no extra fields
 func (l Log) Metric(message string) {
-	if !isValidLogLevel(info) {
+	if !isValidLogLevel(INFO) {
 		return
 	}
 
-	l.log(info.String(), message)
+	l.log(INFO.String(), message)
 }
 
 // Info prints out a message with INFO severity level
 func (l Log) Info(message string) {
-	if !isValidLogLevel(info) {
+	if !isValidLogLevel(INFO) {
 		return
 	}
 
-	l.log(info.String(), message)
+	l.log(INFO.String(), message)
 }
 
 // Infof prints out a message with INFO severity level
@@ -209,11 +209,11 @@ func (l Log) Infof(message string, args ...interface{}) {
 
 // Warn prints out a message with WARN severity level
 func (l Log) Warn(message string) {
-	if !isValidLogLevel(warn) {
+	if !isValidLogLevel(WARN) {
 		return
 	}
 
-	l.log(warn.String(), message)
+	l.log(WARN.String(), message)
 }
 
 // Warnf prints out a message with WARN severity level
@@ -223,7 +223,7 @@ func (l Log) Warnf(message string, args ...interface{}) {
 
 // Error prints out a message with ERROR severity level
 func (l Log) Error(message string) {
-	l.error(error.String(), message)
+	l.error(ERROR.String(), message)
 }
 
 // Errorf prints out a message with ERROR severity level
@@ -234,7 +234,8 @@ func (l Log) Errorf(message string, args ...interface{}) {
 // Fatal is equivalent to Error() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
 func (l Log) Fatal(message string) {
-	l.doFatal(message, os.Exit)
+	l.error(CRITICAL.String(), message)
+	os.Exit(1)
 }
 
 // Fatalf is equivalent to Errorf() followed by a call to os.Exit(1).
@@ -243,13 +244,7 @@ func (l Log) Fatalf(message string, args ...interface{}) {
 	l.Fatal(fmt.Sprintf(message, args...))
 }
 
-// helper method to make the fatal testable.
-func (l Log) doFatal(message string, exiter func(int)) {
-	l.error(critical.String(), message)
-	exiter(1)
-}
-
-// error prints out a message with the passed severity level (ERROR or CRITICAL)
+// ERROR prints out a message with the passed severity level (ERROR or CRITICAL)
 func (l Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
 	runtime.Stack(buffer, false)
