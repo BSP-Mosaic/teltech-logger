@@ -234,14 +234,19 @@ func (l Log) Errorf(message string, args ...interface{}) {
 // Fatal is equivalent to Error() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
 func (l Log) Fatal(message string) {
-	l.error(critical.String(), message)
-	os.Exit(1)
+	l.doFatal(message, os.Exit)
 }
 
 // Fatalf is equivalent to Errorf() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
 func (l Log) Fatalf(message string, args ...interface{}) {
 	l.Fatal(fmt.Sprintf(message, args...))
+}
+
+// helper method to make the fatal testable.
+func (l Log) doFatal(message string, exiter func(int)) {
+	l.error(critical.String(), message)
+	exiter(1)
 }
 
 // error prints out a message with the passed severity level (ERROR or CRITICAL)

@@ -378,3 +378,56 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 		t.Errorf("output file %s does not contain a stacktrace key", got)
 	}
 }
+
+func TestLoggerFatal(t *testing.T) {
+	initConfig(debug, "robokiller-ivr", "1.0")
+
+	buf := new(bytes.Buffer)
+
+	log := New().With(Fields{
+		"key":      "value",
+		"function": "TestLoggerFatal",
+	}).SetWriter(buf)
+
+	log.doFatal("error message", func(code int) {})
+	expected := fmt.Sprintf("{\"severity\":\"CRITICAL\",\"eventTime\":\"%s\",\"message\":\"error message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"data\":{\"function\":\"TestLoggerFatal\",\"key\":\"value\"},\"reportLocation\"", time.Now().Format(time.RFC3339))
+	got := strings.TrimRight(buf.String(), "\n")
+	if !strings.Contains(got, expected) {
+		t.Errorf("output %s does not containsubstring %s", got, expected)
+	}
+
+	// Check that the error entry contains the context
+	if !strings.Contains(got, "\"context\":{\"data\":{\"function\":\"TestLoggerFatal\",\"key\":\"value\"}") {
+		t.Errorf("output %s does not contain the context", got)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !strings.Contains(got, "stacktrace") {
+		t.Errorf("output %s does not contain a stacktrace key", got)
+	}
+}
+
+func TestLoggerFatalWithoutContext(t *testing.T) {
+	initConfig(debug, "robokiller-ivr", "1.0")
+
+	buf := new(bytes.Buffer)
+
+	log := New().SetWriter(buf)
+
+	log.doFatal("fatal message", func(code int) {})
+	expected := fmt.Sprintf("{\"severity\":\"CRITICAL\",\"eventTime\":\"%s\",\"message\":\"fatal message\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"},\"context\":{\"reportLocation\"", time.Now().Format(time.RFC3339))
+	got := strings.TrimRight(buf.String(), "\n")
+	if !strings.Contains(got, expected) {
+		t.Errorf("output %s does not containsubstring %s", got, expected)
+	}
+
+	// Check that the error entry contains the context
+	if strings.Contains(got, "\"context\":{\"data\":") {
+		t.Errorf("output %s has a context and it wasn't supposed to", got)
+	}
+
+	// Check that the error entry has an stacktrace key
+	if !strings.Contains(got, "stacktrace") {
+		t.Errorf("output file %s does not contain a stacktrace key", got)
+	}
+}
