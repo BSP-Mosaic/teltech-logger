@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -85,7 +86,7 @@ var (
 )
 
 func init() {
-	ll, ok := logLevelValue[os.Getenv("LOG_LEVEL")]
+	ll, ok := logLevelValue[strings.ToUpper(os.Getenv("LOG_LEVEL"))]
 	if !ok {
 		fmt.Println("logger WARN: LOG_LEVEL is not valid or not set, defaulting to INFO")
 		logLevel = logLevelValue[INFO.String()]
