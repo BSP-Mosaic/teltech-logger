@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -248,7 +247,7 @@ func (l Log) Fatalf(message string, args ...interface{}) {
 // ERROR prints out a message with the passed severity level (ERROR or CRITICAL)
 func (l Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
-	runtime.Stack(buffer, false)
+	buffer = buffer[:runtime.Stack(buffer, false)]
 	_, file, line, _ := runtime.Caller(2)
 
 	// Set the data when the context is empty
@@ -268,7 +267,7 @@ func (l Log) error(severity, message string) {
 				LineNumber:   line,
 			},
 		},
-		Stacktrace: string(bytes.Trim(buffer, "\x00")),
+		Stacktrace: string(buffer),
 	}
 
 	l.log(severity, message)
