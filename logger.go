@@ -249,7 +249,13 @@ func (l Log) Fatalf(message string, args ...interface{}) {
 func (l Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
 	buffer = buffer[:runtime.Stack(buffer, false)]
-	_, file, line, _ := runtime.Caller(2)
+	fpc, file, line, _ := runtime.Caller(2)
+
+	funcName := "unknown"
+	fun := runtime.FuncForPC(fpc)
+	if fun != nil {
+		funcName = fun.Name()
+	}
 
 	// Set the data when the context is empty
 	if l.payload.Context == nil {
@@ -264,7 +270,7 @@ func (l Log) error(severity, message string) {
 			Data: l.payload.Context.Data,
 			ReportLocation: &ReportLocation{
 				FilePath:     file,
-				FunctionName: "unknown",
+				FunctionName: funcName,
 				LineNumber:   line,
 			},
 		},
