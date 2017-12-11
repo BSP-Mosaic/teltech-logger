@@ -33,14 +33,12 @@ func main() {
 
     param := "something useful here"
 
-    // A metric is an INFO log entry without a payload
-    log.Metric("CUSTOM_METRIC_ENTRY")
-
     // Log a DEBUG message, only visible in when LOG_LEVEL is set to DEBUG
     log.With(logger.Fields{"key": "val", "something": true}).Debug("debug message goes here")
     log.With(logger.Fields{"key": "val"}).Debugf("debug message with %s", param)
 
-    // Log an INFO message
+    // Log an INFO message, should be used for metrics as well
+    log.Info("CUSTOM_METRIC")
     log.With(logger.Fields{"key": "val", "names": []string{"Mauricio", "Manuel"}}).Info("info message goes here")
     log.With(logger.Fields{"key": "val"}).Infof("info message with %s", param)
 

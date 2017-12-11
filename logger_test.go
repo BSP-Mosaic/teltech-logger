@@ -206,21 +206,6 @@ func TestLoggerDebugfWithoutContext(t *testing.T) {
 	}
 }
 
-func TestLoggerMetric(t *testing.T) {
-	initConfig(DEBUG, "robokiller-ivr", "1.0")
-
-	buf := new(bytes.Buffer)
-
-	log := New().SetWriter(buf)
-
-	log.Metric("custom_metric")
-	expected := fmt.Sprintf("{\"severity\":\"INFO\",\"eventTime\":\"%s\",\"message\":\"custom_metric\",\"serviceContext\":{\"service\":\"robokiller-ivr\",\"version\":\"1.0\"}}", time.Now().Format(time.RFC3339))
-	got := strings.TrimRight(buf.String(), "\n")
-	if expected != got {
-		t.Errorf("output %s does not match expected string %s", got, expected)
-	}
-}
-
 func TestLoggerInfo(t *testing.T) {
 	initConfig(DEBUG, "robokiller-ivr", "1.0")
 

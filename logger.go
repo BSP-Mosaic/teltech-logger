@@ -184,15 +184,6 @@ func (l Log) Debugf(message string, args ...interface{}) {
 	l.Debug(fmt.Sprintf(message, args...))
 }
 
-// Metric prints out a message with INFO severity and no extra fields
-func (l Log) Metric(message string) {
-	if !isValidLogLevel(INFO) {
-		return
-	}
-
-	l.log(INFO.String(), message)
-}
-
 // Info prints out a message with INFO severity level
 func (l Log) Info(message string) {
 	if !isValidLogLevel(INFO) {
