@@ -259,6 +259,23 @@ func TestLoggerInfof(t *testing.T) {
 	}
 }
 
+func TestResponseIsValidJson(t *testing.T) {
+	initConfig(DEBUG, "robokiller-ivr", "1.0")
+
+	buf := new(bytes.Buffer)
+	log := New().With(Fields{"key": "value"}).SetWriter(buf)
+
+	log.Error("ERROR message")
+	got := strings.TrimRight(buf.String(), "\n")
+
+	// Encode the returned error and check the "functionName" key value
+	p := Payload{}
+	err := json.Unmarshal([]byte(got), &p)
+	if err != nil {
+		t.Errorf("response cannot be unmarshalled: %s", err.Error())
+	}
+}
+
 func TestGetCallerFunctionName(t *testing.T) {
 	initConfig(DEBUG, "robokiller-ivr", "1.0")
 
