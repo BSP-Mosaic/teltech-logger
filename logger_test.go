@@ -268,7 +268,6 @@ func TestResponseIsValidJson(t *testing.T) {
 	log.Error("ERROR message")
 	got := strings.TrimRight(buf.String(), "\n")
 
-	// Encode the returned error and check the "functionName" key value
 	p := Payload{}
 	err := json.Unmarshal([]byte(got), &p)
 	if err != nil {
