@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"encoding/json"
 )
 
 func TestLoggerInfoWithOneTimeContext(t *testing.T) {
@@ -255,6 +256,28 @@ func TestLoggerInfof(t *testing.T) {
 	got := strings.TrimRight(buf.String(), "\n")
 	if expected != got {
 		t.Errorf("output %s does not match expected string %s", got, expected)
+	}
+}
+
+func TestGetCallerFunctionName(t *testing.T) {
+	initConfig(DEBUG, "robokiller-ivr", "1.0")
+
+	buf := new(bytes.Buffer)
+	log := New().With(Fields{"key": "value"}).SetWriter(buf)
+
+	log.Error("ERROR message")
+	got := strings.TrimRight(buf.String(), "\n")
+
+	// Encode the returned error and check the "functionName" key value
+	p := Payload{}
+	err := json.Unmarshal([]byte(got), &p)
+	if err != nil {
+		t.Errorf("failed to unmarshal payload: %s", err.Error())
+	}
+
+	expected := "logger.TestGetCallerFunctionName"
+	if !strings.Contains(p.Context.ReportLocation.FunctionName, expected) {
+		t.Errorf("output %s does not containsubstring %s", p.Context.ReportLocation.FunctionName, expected)
 	}
 }
 
