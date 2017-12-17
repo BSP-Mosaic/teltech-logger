@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 	"time"
+	"path/filepath"
 )
 
 type severity int
@@ -254,7 +255,7 @@ func (l Log) error(severity, message string) {
 	funcName := "unknown"
 	fun := runtime.FuncForPC(fpc)
 	if fun != nil {
-		funcName = fun.Name()
+		_, funcName = filepath.Split(fun.Name())
 	}
 
 	// Set the data when the context is empty

@@ -293,7 +293,7 @@ func TestGetCallerFunctionName(t *testing.T) {
 	}
 
 	expected := "logger.TestGetCallerFunctionName"
-	if !strings.Contains(p.Context.ReportLocation.FunctionName, expected) {
+	if p.Context.ReportLocation.FunctionName != expected {
 		t.Errorf("output %s does not containsubstring %s", p.Context.ReportLocation.FunctionName, expected)
 	}
 }
