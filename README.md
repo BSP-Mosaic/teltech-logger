@@ -21,7 +21,7 @@ import (
 
 func main() {
     // Stackdriver requires a project name and version to be set. Use your environment for these values.
-    // SERVICE should be your GCP project-id, e.g. robokiller-146813
+    // SERVICE should be your GCP project-id, e.g. my-gce-project-id
     // VERSION is an arbitrary value
     log := logger.New()
 
@@ -62,7 +62,7 @@ The errors require a specific JSON format for them to be ingested and processed 
           "eventTime": "2017-04-26T02:29:33-04:00",
           "message": "An error just happened!",
           "serviceContext": {
-             "service": "robokiller-ivr",
+             "service": "my-gce-project-id",
              "version": "1.0"
           },
           "context": {
