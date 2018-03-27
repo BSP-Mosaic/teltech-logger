@@ -30,7 +30,7 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	buf.Reset()
 
 	log.With(Fields{"foo": "bar"}).SetWriter(buf).Info("unique INFO message")
-	expected = fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"unique INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar"}}}`, time.Now().Format(time.RFC3339))
+	expected = fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"unique INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar","function":"TestLoggerDebug","key":"value"}}}`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if expected != got {
 		t.Errorf("output file %s does not match expected string %s", got, expected)
@@ -78,14 +78,14 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	buf.Reset()
 
 	log.With(Fields{"foo": "bar"}).SetWriter(buf).Error("unique ERROR message")
-	expected = fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"unique ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar"},"reportLocation"`, time.Now().Format(time.RFC3339))
+	expected = fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"unique ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar","function":"TestLoggerError","key":"value"},"reportLocation"`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if !strings.Contains(got, expected) {
 		t.Errorf("output %s does not contain substring %s", got, expected)
 	}
 
 	// Check that the ERROR entry contains the context
-	if !strings.Contains(got, `"context":{"data":{"foo":"bar"}`) {
+	if !strings.Contains(got, `"context":{"data":{"foo":"bar","function":"TestLoggerError","key":"value"}`) {
 		t.Errorf("output %s does not contain the context", got)
 	}
 
