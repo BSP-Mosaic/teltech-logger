@@ -175,21 +175,20 @@ func (l *Log) fields() Fields {
 		f[k] = v
 	}
 	return f
-
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
-
-	for k, v := range l.fields() {
-		fields[k] = v
+	f := l.fields()
+	for k, v := range fields {
+		f[k] = v
 	}
 
 	return &Log{
 		payload: &Payload{
 			ServiceContext: l.payload.ServiceContext,
 			Context: &Context{
-				Data: fields,
+				Data: f,
 			},
 			Stacktrace: "",
 		},
