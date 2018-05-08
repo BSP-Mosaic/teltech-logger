@@ -127,10 +127,11 @@ func New() *Log {
 	}
 }
 
-// SetWriter exists mainly for tests, allowing to change the output from STDOUT to FILE
-func (l Log) SetWriter(w io.Writer) Log {
-	l.writer = w
-	return l
+// WithWriter creates a copy of a Log with a different output.
+func (l *Log) WithWriter(w io.Writer) *Log {
+	n := l.With(Fields{})
+	n.writer = w
+	return n
 }
 
 func (l *Log) log(severity, message string) {
