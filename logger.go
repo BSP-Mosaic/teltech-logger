@@ -127,8 +127,8 @@ func New() *Log {
 	}
 }
 
-// WithWriter creates a copy of a Log with a different output.
-func (l *Log) WithWriter(w io.Writer) *Log {
+// WithOutput creates a copy of a Log with a different output.
+func (l *Log) WithOutput(w io.Writer) *Log {
 	n := l.With(Fields{})
 	n.writer = w
 	return n

@@ -17,7 +17,7 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerDebug",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Info("INFO message")
 	expected := fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerDebug","key":"value"}}}`, time.Now().Format(time.RFC3339))
@@ -29,7 +29,7 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	// Clean-up the buffer in preparation for new assertions
 	buf.Reset()
 
-	log.With(Fields{"foo": "bar"}).WithWriter(buf).Info("unique INFO message")
+	log.With(Fields{"foo": "bar"}).WithOutput(buf).Info("unique INFO message")
 	expected = fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"unique INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar","function":"TestLoggerDebug","key":"value"}}}`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if expected != got {
@@ -39,7 +39,7 @@ func TestLoggerInfoWithOneTimeContext(t *testing.T) {
 	// Clean-up the buffer in preparation for new assertions
 	buf.Reset()
 
-	log.WithWriter(buf).Info("unique INFO message")
+	log.WithOutput(buf).Info("unique INFO message")
 	expected = fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"unique INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerDebug","key":"value"}}}`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if expected != got {
@@ -55,7 +55,7 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerError",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Error("ERROR message")
 	expected := fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerError","key":"value"},"reportLocation"`, time.Now().Format(time.RFC3339))
@@ -77,7 +77,7 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	// Clean-up the buffer in preparation for new assertions
 	buf.Reset()
 
-	log.With(Fields{"foo": "bar"}).WithWriter(buf).Error("unique ERROR message")
+	log.With(Fields{"foo": "bar"}).WithOutput(buf).Error("unique ERROR message")
 	expected = fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"unique ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"foo":"bar","function":"TestLoggerError","key":"value"},"reportLocation"`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if !strings.Contains(got, expected) {
@@ -97,7 +97,7 @@ func TestLoggerErrorWithOneTimeContext(t *testing.T) {
 	// Clean-up the buffer in preparation for new assertions
 	buf.Reset()
 
-	log.WithWriter(buf).Error("unique ERROR message")
+	log.WithOutput(buf).Error("unique ERROR message")
 	expected = fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"unique ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerError","key":"value"},"reportLocation"`, time.Now().Format(time.RFC3339))
 	got = strings.TrimRight(buf.String(), "\n")
 	if !strings.Contains(got, expected) {
@@ -122,7 +122,7 @@ func TestLoggerWithDifferentLogLevels(t *testing.T) {
 
 	log := New().With(Fields{
 		"key": "value",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	// LogLevel set to WARN, DEBUG messages should not be output
 	log.Debug("DEBUG message")
@@ -166,7 +166,7 @@ func TestLoggerDebugWithImplicitContext(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerDebug",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Debug("DEBUG message")
 
@@ -181,7 +181,7 @@ func TestLoggerDebugWithoutContext(t *testing.T) {
 	initConfig(DEBUG, "my-app", "1.0")
 
 	buf := new(bytes.Buffer)
-	log := New().WithWriter(buf)
+	log := New().WithOutput(buf)
 
 	log.Debug("DEBUG message")
 	expected := fmt.Sprintf(`{"severity":"DEBUG","eventTime":"%s","message":"DEBUG message","serviceContext":{"service":"my-app","version":"1.0"},"context":{}}`, time.Now().Format(time.RFC3339))
@@ -196,7 +196,7 @@ func TestLoggerDebugfWithoutContext(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 
-	log := New().WithWriter(buf)
+	log := New().WithOutput(buf)
 
 	param := "with param"
 	log.Debugf("DEBUG message %s", param)
@@ -215,7 +215,7 @@ func TestLoggerInfo(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerInfo",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Info("INFO message")
 	expected := fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerInfo","key":"value"}}}`, time.Now().Format(time.RFC3339))
@@ -233,7 +233,7 @@ func TestLoggerInfof(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerInfo",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	param := "with param"
 	log.Infof("INFO message %s", param)
@@ -248,7 +248,7 @@ func TestResponseIsValidJson(t *testing.T) {
 	initConfig(DEBUG, "my-app", "1.0")
 
 	buf := new(bytes.Buffer)
-	log := New().With(Fields{"key": "value"}).WithWriter(buf)
+	log := New().With(Fields{"key": "value"}).WithOutput(buf)
 
 	log.Error("ERROR message")
 	got := strings.TrimRight(buf.String(), "\n")
@@ -264,7 +264,7 @@ func TestGetCallerFunctionName(t *testing.T) {
 	initConfig(DEBUG, "my-app", "1.0")
 
 	buf := new(bytes.Buffer)
-	log := New().With(Fields{"key": "value"}).WithWriter(buf)
+	log := New().With(Fields{"key": "value"}).WithOutput(buf)
 
 	log.Error("ERROR message")
 	got := strings.TrimRight(buf.String(), "\n")
@@ -290,7 +290,7 @@ func TestLoggerError(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerError",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Error("ERROR message")
 	expected := fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerError","key":"value"},"reportLocation"`, time.Now().Format(time.RFC3339))
@@ -315,7 +315,7 @@ func TestLoggerErrorWithoutContext(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 
-	log := New().WithWriter(buf)
+	log := New().WithOutput(buf)
 
 	log.Error("ERROR message")
 	expected := fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"ERROR message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"reportLocation"`, time.Now().Format(time.RFC3339))
@@ -343,7 +343,7 @@ func TestLoggerErrorf(t *testing.T) {
 	log := New().With(Fields{
 		"key":      "value",
 		"function": "TestLoggerError",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	param := "with param"
 	log.Errorf("ERROR message %s", param)
@@ -363,7 +363,7 @@ func TestLoggerInfoWithSeveralContextEntries(t *testing.T) {
 		"function": "TestLoggerInfo",
 		"key":      "value",
 		"package":  "logger",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Info("INFO message")
 	expected := fmt.Sprintf(`{"severity":"INFO","eventTime":"%s","message":"INFO message","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestLoggerInfo","key":"value","package":"logger"}}}`, time.Now().Format(time.RFC3339))
@@ -382,7 +382,7 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 		"function": "TestLoggerError",
 		"key":      "value",
 		"package":  "logger",
-	}).WithWriter(buf)
+	}).WithOutput(buf)
 
 	log.Error("ERROR message")
 	expected := fmt.Sprintf(`{"severity":"ERROR","eventTime":"%s","message":"ERROR message","serviceContext":{"service":"my-app","version":"1.0"}`, time.Now().Format(time.RFC3339))
