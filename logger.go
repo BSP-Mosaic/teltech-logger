@@ -160,7 +160,7 @@ func (l *Log) log(severity, message string) {
 	fmt.Fprintln(l.writer, string(payload))
 }
 
-// Checks whether the specified log level is valid in the current environment
+// Checks whether the specified log level is valid
 func (l *Log) isValidLogLevel(s severity) bool {
 	return s >= l.level
 }
