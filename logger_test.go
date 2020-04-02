@@ -400,4 +400,37 @@ func TestLoggerErrorWithSeveralContextEntries(t *testing.T) {
 	if !strings.Contains(got, "stacktrace") {
 		t.Errorf("output file %s does not contain a stacktrace key", got)
 	}
+
+	log.With(Fields{"description": "With() should create a copy of logger with the same writer"}).Info("same writer")
+	got = buf.String()
+	if !strings.Contains(got, `"context":{"data":{"description":"With() should create a copy of logger with the same writer","function":"TestLoggerError","key":"value","package":"logger"}`) {
+		t.Errorf("output file %s does not contain the context", got)
+	}
+}
+
+func TestMultipleLogLevels(t *testing.T) {
+	initConfig(DEBUG, "multiple-log-levels", "1.0")
+
+	var (
+		buf        = new(bytes.Buffer)
+		defaultLog = New().WithOutput(buf)
+		warnLog    = defaultLog.WithLevel(WARN)
+	)
+
+	defaultLog.Debug("DEBUG message over defaultLog")
+	warnLog.Debug("DEBUG message over warnLog")
+	warnLog.Warn("WARN message over warnLog")
+	got := buf.String()
+
+	if nok := `DEBUG message over warnLog`; strings.Contains(got, nok) {
+		t.Errorf("output should not contain %q", nok)
+	}
+
+	if ok := `DEBUG message over defaultLog`; !strings.Contains(got, ok) {
+		t.Errorf("output should contain %q", ok)
+	}
+
+	if ok := `WARN message over warnLog`; !strings.Contains(got, ok) {
+		t.Errorf("output should contain %q", ok)
+	}
 }

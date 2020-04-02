@@ -78,21 +78,20 @@ type Payload struct {
 type Log struct {
 	payload *Payload
 	writer  io.Writer
+	level   severity
 }
 
 var (
-	logLevel severity
-	service  string
-	version  string
+	defaultLogLevel severity
+	service         string
+	version         string
 )
 
 func init() {
-	ll, ok := logLevelValue[strings.ToUpper(os.Getenv("LOG_LEVEL"))]
+	logLevel, ok := logLevelValue[strings.ToUpper(os.Getenv("LOG_LEVEL"))]
 	if !ok {
 		fmt.Println("logger WARN: LOG_LEVEL is not valid or not set, defaulting to INFO")
 		logLevel = logLevelValue[INFO.String()]
-	} else {
-		logLevel = ll
 	}
 
 	if os.Getenv("SERVICE") == "" || os.Getenv("VERSION") == "" {
@@ -103,7 +102,7 @@ func init() {
 }
 
 func initConfig(lvl severity, svc, ver string) {
-	logLevel = lvl
+	defaultLogLevel = lvl
 	service = svc
 	version = ver
 }
@@ -124,6 +123,7 @@ func New() *Log {
 	return &Log{
 		payload: p,
 		writer:  os.Stdout,
+		level:   defaultLogLevel,
 	}
 }
 
@@ -131,6 +131,13 @@ func New() *Log {
 func (l *Log) WithOutput(w io.Writer) *Log {
 	n := l.With(Fields{})
 	n.writer = w
+	return n
+}
+
+// WithLevel creates a copy of a Log with a different log level
+func (l *Log) WithLevel(logLevel severity) *Log {
+	n := l.With(Fields{})
+	n.level = logLevel
 	return n
 }
 
@@ -154,8 +161,8 @@ func (l *Log) log(severity, message string) {
 }
 
 // Checks whether the specified log level is valid in the current environment
-func isValidLogLevel(s severity) bool {
-	return s >= logLevel
+func (l *Log) isValidLogLevel(s severity) bool {
+	return s >= l.level
 }
 
 // fields returns a valid Fields whether or not one exists in the *Log.
@@ -193,13 +200,14 @@ func (l *Log) With(fields Fields) *Log {
 			},
 			Stacktrace: "",
 		},
-		writer: os.Stdout,
+		writer: l.writer,
+		level:  l.level,
 	}
 }
 
 // Debug prints out a message with DEBUG severity level
 func (l Log) Debug(message string) {
-	if !isValidLogLevel(DEBUG) {
+	if !l.isValidLogLevel(DEBUG) {
 		return
 	}
 
@@ -213,7 +221,7 @@ func (l Log) Debugf(message string, args ...interface{}) {
 
 // Info prints out a message with INFO severity level
 func (l Log) Info(message string) {
-	if !isValidLogLevel(INFO) {
+	if !l.isValidLogLevel(INFO) {
 		return
 	}
 
@@ -227,7 +235,7 @@ func (l Log) Infof(message string, args ...interface{}) {
 
 // Warn prints out a message with WARN severity level
 func (l Log) Warn(message string) {
-	if !isValidLogLevel(WARN) {
+	if !l.isValidLogLevel(WARN) {
 		return
 	}
 
