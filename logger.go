@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -76,9 +77,10 @@ type Payload struct {
 
 // Log is the main type for the logger package
 type Log struct {
+	level   severity
+	mux     sync.Mutex
 	payload *Payload
 	writer  io.Writer
-	level   severity
 }
 
 var (
@@ -142,6 +144,9 @@ func (l *Log) WithLevel(logLevel severity) *Log {
 }
 
 func (l *Log) log(severity, message string) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	// Do not persist the payload here, just format it, marshal it and return it
 	l.payload = &Payload{
 		Severity:       severity,
@@ -162,11 +167,17 @@ func (l *Log) log(severity, message string) {
 
 // Checks whether the specified log level is valid
 func (l *Log) isValidLogLevel(s severity) bool {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	return s >= l.level
 }
 
 // fields returns a valid Fields whether or not one exists in the *Log.
 func (l *Log) fields() Fields {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	f := make(Fields)
 	if l.payload == nil {
 		return f
@@ -182,12 +193,17 @@ func (l *Log) fields() Fields {
 	for k, v := range l.payload.Context.Data {
 		f[k] = v
 	}
+
 	return f
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
 	f := l.fields()
+
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	for k, v := range fields {
 		f[k] = v
 	}
@@ -284,6 +300,7 @@ func (l Log) error(severity, message string) {
 	}
 
 	// Set the data when the context is empty
+	l.mux.Lock()
 	if l.payload.Context == nil {
 		l.payload.Context = &Context{
 			Data: Fields{},
@@ -302,6 +319,7 @@ func (l Log) error(severity, message string) {
 		},
 		Stacktrace: string(buffer),
 	}
+	l.mux.Unlock()
 
 	l.log(severity, message)
 }
