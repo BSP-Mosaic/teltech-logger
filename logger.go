@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -76,9 +77,10 @@ type Payload struct {
 
 // Log is the main type for the logger package
 type Log struct {
+	level   severity
+	mux     sync.Mutex
 	payload *Payload
 	writer  io.Writer
-	level   severity
 }
 
 var (
@@ -142,6 +144,9 @@ func (l *Log) WithLevel(logLevel severity) *Log {
 }
 
 func (l *Log) log(severity, message string) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	// Do not persist the payload here, just format it, marshal it and return it
 	l.payload = &Payload{
 		Severity:       severity,
@@ -162,6 +167,9 @@ func (l *Log) log(severity, message string) {
 
 // Checks whether the specified log level is valid
 func (l *Log) isValidLogLevel(s severity) bool {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	return s >= l.level
 }
 
@@ -182,12 +190,17 @@ func (l *Log) fields() Fields {
 	for k, v := range l.payload.Context.Data {
 		f[k] = v
 	}
+
 	return f
 }
 
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
 	f := l.fields()
+
 	for k, v := range fields {
 		f[k] = v
 	}
@@ -206,7 +219,7 @@ func (l *Log) With(fields Fields) *Log {
 }
 
 // Debug prints out a message with DEBUG severity level
-func (l Log) Debug(message string) {
+func (l *Log) Debug(message string) {
 	if !l.isValidLogLevel(DEBUG) {
 		return
 	}
@@ -215,12 +228,12 @@ func (l Log) Debug(message string) {
 }
 
 // Debugf prints out a message with DEBUG severity level
-func (l Log) Debugf(message string, args ...interface{}) {
+func (l *Log) Debugf(message string, args ...interface{}) {
 	l.Debug(fmt.Sprintf(message, args...))
 }
 
 // Info prints out a message with INFO severity level
-func (l Log) Info(message string) {
+func (l *Log) Info(message string) {
 	if !l.isValidLogLevel(INFO) {
 		return
 	}
@@ -229,12 +242,12 @@ func (l Log) Info(message string) {
 }
 
 // Infof prints out a message with INFO severity level
-func (l Log) Infof(message string, args ...interface{}) {
+func (l *Log) Infof(message string, args ...interface{}) {
 	l.Info(fmt.Sprintf(message, args...))
 }
 
 // Warn prints out a message with WARN severity level
-func (l Log) Warn(message string) {
+func (l *Log) Warn(message string) {
 	if !l.isValidLogLevel(WARN) {
 		return
 	}
@@ -243,36 +256,36 @@ func (l Log) Warn(message string) {
 }
 
 // Warnf prints out a message with WARN severity level
-func (l Log) Warnf(message string, args ...interface{}) {
+func (l *Log) Warnf(message string, args ...interface{}) {
 	l.Warn(fmt.Sprintf(message, args...))
 }
 
 // Error prints out a message with ERROR severity level
-func (l Log) Error(message string) {
+func (l *Log) Error(message string) {
 	l.error(ERROR.String(), message)
 }
 
 // Errorf prints out a message with ERROR severity level
-func (l Log) Errorf(message string, args ...interface{}) {
+func (l *Log) Errorf(message string, args ...interface{}) {
 	l.error(ERROR.String(), fmt.Sprintf(message, args...))
 }
 
 // Fatal is equivalent to Error() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
-func (l Log) Fatal(message string) {
+func (l *Log) Fatal(message string) {
 	l.error(CRITICAL.String(), message)
 	os.Exit(1)
 }
 
 // Fatalf is equivalent to Errorf() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
-func (l Log) Fatalf(message string, args ...interface{}) {
+func (l *Log) Fatalf(message string, args ...interface{}) {
 	l.error(CRITICAL.String(), fmt.Sprintf(message, args...))
 	os.Exit(1)
 }
 
 // ERROR prints out a message with the passed severity level (ERROR or CRITICAL)
-func (l Log) error(severity, message string) {
+func (l *Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
 	buffer = buffer[:runtime.Stack(buffer, false)]
 	fpc, file, line, _ := runtime.Caller(2)
@@ -284,6 +297,7 @@ func (l Log) error(severity, message string) {
 	}
 
 	// Set the data when the context is empty
+	l.mux.Lock()
 	if l.payload.Context == nil {
 		l.payload.Context = &Context{
 			Data: Fields{},
@@ -302,6 +316,7 @@ func (l Log) error(severity, message string) {
 		},
 		Stacktrace: string(buffer),
 	}
+	l.mux.Unlock()
 
 	l.log(severity, message)
 }
