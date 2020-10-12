@@ -20,6 +20,8 @@ const (
 	WARN
 	ERROR
 	CRITICAL
+
+	defaultCallerSkip = 2
 )
 
 func (s severity) String() string {
@@ -77,10 +79,11 @@ type Payload struct {
 
 // Log is the main type for the logger package
 type Log struct {
-	level   severity
-	mux     sync.Mutex
-	payload *Payload
-	writer  io.Writer
+	level      severity
+	mux        sync.Mutex
+	payload    *Payload
+	writer     io.Writer
+	callerSkip int
 }
 
 var (
@@ -123,9 +126,10 @@ func New() *Log {
 	}
 
 	return &Log{
-		payload: p,
-		writer:  os.Stdout,
-		level:   defaultLogLevel,
+		payload:    p,
+		writer:     os.Stdout,
+		level:      defaultLogLevel,
+		callerSkip: defaultCallerSkip,
 	}
 }
 
@@ -141,6 +145,16 @@ func (l *Log) WithLevel(logLevel severity) *Log {
 	n := l.With(Fields{})
 	n.level = logLevel
 	return n
+}
+
+// AddCallerSkip increases the number of callers skipped by caller annotation.
+// When building wrappers around the Logger, supplying this value prevents logger
+// from always reporting the wrapper code as the caller.
+func (l *Log) AddCallerSkip(skip int) {
+	l.mux.Lock()
+	defer l.mux.Unlock()
+
+	l.callerSkip += skip
 }
 
 func (l *Log) log(severity, message string) {
@@ -213,8 +227,9 @@ func (l *Log) With(fields Fields) *Log {
 			},
 			Stacktrace: "",
 		},
-		writer: l.writer,
-		level:  l.level,
+		writer:     l.writer,
+		level:      l.level,
+		callerSkip: l.callerSkip,
 	}
 }
 
@@ -288,7 +303,7 @@ func (l *Log) Fatalf(message string, args ...interface{}) {
 func (l *Log) error(severity, message string) {
 	buffer := make([]byte, 1024)
 	buffer = buffer[:runtime.Stack(buffer, false)]
-	fpc, file, line, _ := runtime.Caller(2)
+	fpc, file, line, _ := runtime.Caller(l.callerSkip)
 
 	funcName := "unknown"
 	fun := runtime.FuncForPC(fpc)
