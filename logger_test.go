@@ -434,3 +434,34 @@ func TestMultipleLogLevels(t *testing.T) {
 		t.Errorf("output should contain %q", ok)
 	}
 }
+
+type customLog struct {
+	base *Log
+}
+
+func (l *customLog) Error(msg string) {
+	l.base.Error(msg)
+}
+
+func TestCallerSkip(t *testing.T) {
+	initConfig(DEBUG, "caller-skip", "1.0")
+
+	buf := new(bytes.Buffer)
+
+	baseLog := New().WithOutput(buf)
+	baseLog.Errorf("base log error")
+	if !strings.Contains(buf.String(), `"functionName":"logger.TestCallerSkip"`) {
+		t.Errorf("invalid function name in error log: %s", buf)
+	}
+	buf.Reset()
+
+	baseLog.AddCallerSkip(1)
+	customLog := customLog{base: baseLog}
+	func() {
+		customLog.Error("custom log error")
+	}()
+
+	if !strings.Contains(buf.String(), `"functionName":"logger.TestCallerSkip.func1"`) {
+		t.Errorf("invalid function name in error log: %s", buf)
+	}
+}
