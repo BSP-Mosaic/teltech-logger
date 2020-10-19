@@ -67,7 +67,7 @@ The errors require a specific JSON format for them to be ingested and processed 
           },
           "context": {
             "data": {
-              "clientIP": "127.0.0.1"
+              "clientIP": "127.0.0.1",
               "userAgent": "Mosaic 1.0"
             },
             "reportLocation": {
