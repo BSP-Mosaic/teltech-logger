@@ -465,3 +465,25 @@ func TestCallerSkip(t *testing.T) {
 		t.Errorf("invalid function name in error log: %s", buf)
 	}
 }
+
+func TestStackTraceIssue(t *testing.T) {
+	initConfig(DEBUG, "stack-trace-issue", "1.0")
+	var (
+		buf = new(bytes.Buffer)
+		log = New().WithOutput(buf)
+		q   = `"stacktrace":"`
+	)
+
+	log.Error("ERROR message")
+	got := buf.String()
+	if !strings.Contains(got, q) {
+		t.Errorf("output should contain %q: %s", q, got)
+	}
+	buf.Reset()
+
+	log.Info("INFO message")
+	got = buf.String()
+	if strings.Contains(got, q) {
+		t.Errorf("output should not contain %q: %s", q, got)
+	}
+}

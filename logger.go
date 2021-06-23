@@ -79,11 +79,12 @@ type Payload struct {
 
 // Log is the main type for the logger package
 type Log struct {
-	level      severity
-	mux        sync.Mutex
-	payload    *Payload
-	writer     io.Writer
-	callerSkip int
+	level          severity
+	mux            sync.RWMutex
+	fields         Fields
+	serviceContext *ServiceContext
+	writer         io.Writer
+	callerSkip     int
 }
 
 var (
@@ -114,23 +115,21 @@ func initConfig(lvl severity, svc, ver string) {
 
 // New instantiates and returns a Log object
 func New() *Log {
-	// Set the ServiceContext only within a GCP context
-	p := &Payload{}
-	if service != "" && version != "" {
-		p = &Payload{
-			ServiceContext: &ServiceContext{
-				Service: service,
-				Version: version,
-			},
-		}
-	}
-
-	return &Log{
-		payload:    p,
+	l := &Log{
+		fields:     Fields{},
 		writer:     os.Stdout,
 		level:      defaultLogLevel,
 		callerSkip: defaultCallerSkip,
 	}
+
+	if service != "" && version != "" {
+		l.serviceContext = &ServiceContext{
+			Service: service,
+			Version: version,
+		}
+	}
+
+	return l
 }
 
 // WithOutput creates a copy of a Log with a different output.
@@ -157,26 +156,31 @@ func (l *Log) AddCallerSkip(skip int) {
 	l.callerSkip += skip
 }
 
-func (l *Log) log(severity, message string) {
+func (l *Log) log(severity, message, stacktrace string, reportLocation *ReportLocation) {
 	l.mux.Lock()
 	defer l.mux.Unlock()
 
 	// Do not persist the payload here, just format it, marshal it and return it
-	l.payload = &Payload{
+	payload := &Payload{
 		Severity:       severity,
 		EventTime:      time.Now().Format(time.RFC3339),
 		Message:        message,
-		ServiceContext: l.payload.ServiceContext,
-		Context:        l.payload.Context,
-		Stacktrace:     l.payload.Stacktrace,
+		ServiceContext: l.serviceContext,
+		Context: &Context{
+			Data:           l.fields,
+			ReportLocation: reportLocation,
+		},
+		Stacktrace: stacktrace,
 	}
 
-	payload, ok := json.Marshal(l.payload)
-	if ok != nil {
-		fmt.Printf("logger ERROR: cannot marshal payload: %s", ok.Error())
+	b, err := json.Marshal(payload)
+	if err != nil {
+		fmt.Printf("logger ERROR: cannot marshal payload: %s", err)
+		return
 	}
 
-	fmt.Fprintln(l.writer, string(payload))
+	l.writer.Write(b)
+	l.writer.Write([]byte{'\n'})
 }
 
 // Checks whether the specified log level is valid
@@ -188,20 +192,10 @@ func (l *Log) isValidLogLevel(s severity) bool {
 }
 
 // fields returns a valid Fields whether or not one exists in the *Log.
-func (l *Log) fields() Fields {
-	f := make(Fields)
-	if l.payload == nil {
-		return f
-	}
-	if l.payload.Context == nil {
-		return f
-	}
+func (l *Log) getFields() Fields {
+	f := Fields{}
 
-	if l.payload.Context.Data == nil {
-		return f
-	}
-
-	for k, v := range l.payload.Context.Data {
+	for k, v := range l.fields {
 		f[k] = v
 	}
 
@@ -210,26 +204,21 @@ func (l *Log) fields() Fields {
 
 // With is used as a chained method to specify which values go in the log entry's context
 func (l *Log) With(fields Fields) *Log {
-	l.mux.Lock()
-	defer l.mux.Unlock()
+	l.mux.RLock()
+	defer l.mux.RUnlock()
 
-	f := l.fields()
+	f := l.getFields()
 
 	for k, v := range fields {
 		f[k] = v
 	}
 
 	return &Log{
-		payload: &Payload{
-			ServiceContext: l.payload.ServiceContext,
-			Context: &Context{
-				Data: f,
-			},
-			Stacktrace: "",
-		},
-		writer:     l.writer,
-		level:      l.level,
-		callerSkip: l.callerSkip,
+		serviceContext: l.serviceContext,
+		fields:         f,
+		writer:         l.writer,
+		level:          l.level,
+		callerSkip:     l.callerSkip,
 	}
 }
 
@@ -239,7 +228,7 @@ func (l *Log) Debug(message string) {
 		return
 	}
 
-	l.log(DEBUG.String(), message)
+	l.log(DEBUG.String(), message, "", nil)
 }
 
 // Debugf prints out a message with DEBUG severity level
@@ -253,7 +242,7 @@ func (l *Log) Info(message string) {
 		return
 	}
 
-	l.log(INFO.String(), message)
+	l.log(INFO.String(), message, "", nil)
 }
 
 // Infof prints out a message with INFO severity level
@@ -267,7 +256,7 @@ func (l *Log) Warn(message string) {
 		return
 	}
 
-	l.log(WARN.String(), message)
+	l.log(WARN.String(), message, "", nil)
 }
 
 // Warnf prints out a message with WARN severity level
@@ -311,27 +300,9 @@ func (l *Log) error(severity, message string) {
 		_, funcName = filepath.Split(fun.Name())
 	}
 
-	// Set the data when the context is empty
-	l.mux.Lock()
-	if l.payload.Context == nil {
-		l.payload.Context = &Context{
-			Data: Fields{},
-		}
-	}
-
-	l.payload = &Payload{
-		ServiceContext: l.payload.ServiceContext,
-		Context: &Context{
-			Data: l.payload.Context.Data,
-			ReportLocation: &ReportLocation{
-				FilePath:     file,
-				FunctionName: funcName,
-				LineNumber:   line,
-			},
-		},
-		Stacktrace: string(buffer),
-	}
-	l.mux.Unlock()
-
-	l.log(severity, message)
+	l.log(severity, message, string(buffer), &ReportLocation{
+		FilePath:     file,
+		FunctionName: funcName,
+		LineNumber:   line,
+	})
 }
