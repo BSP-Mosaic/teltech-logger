@@ -487,3 +487,32 @@ func TestStackTraceIssue(t *testing.T) {
 		t.Errorf("output should not contain %q: %s", q, got)
 	}
 }
+
+func TestWithTrace(t *testing.T) {
+	initConfig(DEBUG, "my-app", "1.0")
+
+	buf := new(bytes.Buffer)
+
+	log := New().
+		With(Fields{
+			"function": t.Name(),
+			"key":      "value",
+			"package":  "logger",
+		}).
+		WithOutput(buf).
+		WithTrace("traceID", "spanID1", false, "projectName")
+
+	log.Info("test1")
+
+	log = log.
+		With(Fields{"package": "new"}).
+		WithTrace("", "spanID2", false, "")
+	log.Info("test2")
+
+	expected := fmt.Sprintf(`{"severity":"INFO","eventTime":"%[1]s","message":"test1","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestWithTrace","key":"value","package":"logger"}},"logging.googleapis.com/trace":"projects/projectName/traces/traceID","logging.googleapis.com/trace_sampled":false,"logging.googleapis.com/spanId":"spanID1"}
+{"severity":"INFO","eventTime":"%[1]s","message":"test2","serviceContext":{"service":"my-app","version":"1.0"},"context":{"data":{"function":"TestWithTrace","key":"value","package":"new"}},"logging.googleapis.com/trace":"projects/projectName/traces/traceID","logging.googleapis.com/trace_sampled":false,"logging.googleapis.com/spanId":"spanID2"}`, time.Now().Format(time.RFC3339))
+	got := strings.TrimRight(buf.String(), "\n")
+	if expected != got {
+		t.Errorf("output %s does not match expected string %s", got, expected)
+	}
+}
