@@ -66,6 +66,12 @@ type Context struct {
 	ReportLocation *ReportLocation `json:"reportLocation,omitempty"`
 }
 
+type trace struct {
+	Trace        string `json:"logging.googleapis.com/trace,omitempty"`
+	TraceSampled *bool  `json:"logging.googleapis.com/trace_sampled,omitempty"`
+	SpanID       string `json:"logging.googleapis.com/spanId,omitempty"`
+}
+
 // Payload groups all the data for a log entry
 type Payload struct {
 	Severity       string          `json:"severity"`
@@ -75,6 +81,7 @@ type Payload struct {
 	ServiceContext *ServiceContext `json:"serviceContext,omitempty"`
 	Context        *Context        `json:"context,omitempty"`
 	Stacktrace     string          `json:"stacktrace,omitempty"`
+	trace
 }
 
 // Log is the main type for the logger package
@@ -85,6 +92,7 @@ type Log struct {
 	serviceContext *ServiceContext
 	writer         io.Writer
 	callerSkip     int
+	trace          trace
 }
 
 var (
@@ -146,6 +154,19 @@ func (l *Log) WithLevel(logLevel severity) *Log {
 	return n
 }
 
+// WithTrace creates a copy of a Log with added trace properties
+func (l *Log) WithTrace(traceID string, spanID string, sampled bool, projectName string) *Log {
+	n := l.With(Fields{})
+	if traceID != "" && projectName != "" {
+		n.trace.Trace = fmt.Sprintf("projects/%s/traces/%s", projectName, traceID)
+	}
+	if spanID != "" {
+		n.trace.SpanID = spanID
+	}
+	n.trace.TraceSampled = &sampled
+	return n
+}
+
 // AddCallerSkip increases the number of callers skipped by caller annotation.
 // When building wrappers around the Logger, supplying this value prevents logger
 // from always reporting the wrapper code as the caller.
@@ -171,6 +192,7 @@ func (l *Log) log(severity, message, stacktrace string, reportLocation *ReportLo
 			ReportLocation: reportLocation,
 		},
 		Stacktrace: stacktrace,
+		trace:      l.trace,
 	}
 
 	b, err := json.Marshal(payload)
@@ -219,6 +241,7 @@ func (l *Log) With(fields Fields) *Log {
 		writer:         l.writer,
 		level:          l.level,
 		callerSkip:     l.callerSkip,
+		trace:          l.trace,
 	}
 }
 
