@@ -5,7 +5,7 @@ Super simple structured logging mechanism for Go projects with [Stackdriver form
 ## Installation
 
 ``` sh
-go get -u github.com/BSP-Mosaic/logger
+go get -u github.com/BSP-Mosaic/teltech-logger
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ go get -u github.com/BSP-Mosaic/logger
 package main
 
 import (
-    "github.com/BSP-Mosaic/logger"
+    "github.com/BSP-Mosaic/teltech-logger"
 )
 
 // There should be a LOG_LEVEL environment variable set, which is read by the library
