@@ -1,8 +1,0 @@
-version: 1
-type: go
-resolver:
-    repo: go
-    serverId: Default-Server
-deployer:
-    repo: go-local
-    serverId: Default-Server
