@@ -8,6 +8,23 @@ Super simple structured logging mechanism for Go projects with [Stackdriver form
 go get -u github.com/BSP-Mosaic/teltech-logger
 ```
 
+## Deployment Instructions
+Use the deploy.sh script to deploy your Go project to the Artifactory go-local repository. Here's how you can do it:
+
+### Deploy Using Existing Module Definition
+If your project includes a go.mod file with a defined module name, deploy by specifying only the version:
+
+``` sh
+./deploy.sh v1.0.0
+```
+
+### Deploy with Custom Module Name
+If your project does not have a go.mod file or you wish to specify a different module name, use:
+``` sh
+./deploy.sh bendingspoons.com/logger v1.0.0
+```
+Ensure that ARTIFACTORY_ACCESS_TOKEN, ARTIFACTORY_URL, and ARTIFACTORY_USERNAME are present in the environment variables before using the script.
+
 ## Usage
 ``` go
 package main
