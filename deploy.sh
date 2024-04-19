@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Define colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -42,6 +44,7 @@ if [[ "$1" == "-h" || "$1" == "--help" ]]; then
   usage
 fi
 
+MODULE_NAME=$1
 VERSION=$2
 
 if [ "$#" -eq 1 ]; then
@@ -56,7 +59,7 @@ if [ "$#" -eq 1 ]; then
     echo "${RED}Error: No module name provided and go.mod does not exist.${NC}"
     usage
   fi
-elif [ "$#" -ne 2 ]; then
+elif ["$#" -ne 2 ]; then
   echo "${RED}Error: Incorrect number of arguments.${NC}"
   usage
 fi
@@ -64,21 +67,38 @@ fi
 echo "${YELLOW}Step 1/7: Checking and installing Go and JFrog CLI...${NC}"
 install_tools
 
-echo "${YELLOW}Step 2/7: Creating go.mod...${NC}"
+echo "${YELLOW}Step 2/7: Creating go.mod... and adding the sum${NC}"
 if [ -f "go.mod" ]; then
   echo "${GREEN}go.mod already exists, skipping go mod init.${NC}"
-  go build
+  go build || {
+    echo "${RED}Failed to build Go project.${NC}"
+    exit 1
+  }
 else
+  echo "go mod init ${MODULE_NAME}"
   echo "${GREEN}Initializing Go module: $MODULE_NAME${NC}"
-  go mod init "$MODULE_NAME" && echo "${GREEN}Module initialized successfully!${NC}"
+  echo "${MODULE_NAME}"
+  go mod init $MODULE_NAME && echo "${GREEN}Module initialized successfully!${NC}" ||
+    {
+      echo "${RED}Failed to initialize module.${NC}"
+      exit 1
+    }
 fi
+go mod tidy && echo "${GREEN}Sum was calulated successfully!${NC}" ||
+  {
+    echo "${RED}Failed to icalculate sum.${NC}"
+    exit 1
+  }
 
 echo "${YELLOW}Step 3/7: Initialize Artifactory Go configuration...${NC}"
 jfrog go-config \
   --repo-deploy $repo_deploy \
   --repo-resolve $repo_resolve \
   --server-id-deploy $server_id \
-  --server-id-resolve $server_id
+  --server-id-resolve $server_id || {
+  echo "${RED}Failed to configure Artifactory.${NC}"
+  exit 1
+}
 echo "${GREEN}Artifactory configuration completed successfully.${NC}"
 
 echo "${YELLOW}Step 4/7: Adding JFrog server configuration...${NC}"
@@ -89,18 +109,30 @@ else
     --url=https://bendingspoons.jfrog.io \
     --user=$ARTIFACTORY_USERNAME \
     --access-token=$ARTIFACTORY_ACCESS_TOKEN \
-    --interactive=false
+    --interactive=false || {
+    echo "${RED}Failed to add JFrog server configuration.${NC}"
+    exit 1
+  }
   echo "${GREEN}JFrog server configuration added successfully.${NC}"
 fi
 
 echo "${YELLOW}Step 5/7: Building the go project...${NC}"
-jfrog go build
+jfrog go build || {
+  echo "${RED}Failed to build Go project with JFrog.${NC}"
+  exit 1
+}
 echo "${GREEN}Go project built successfully.${NC}"
 
 echo "${YELLOW}Step 6/7: Deploy to artifactory...${NC}"
-jfrog gp "$VERSION"
+jfrog gp "$VERSION" || {
+  echo "${RED}Failed to deploy Go project to Artifactory.${NC}"
+  exit 1
+}
 echo "${GREEN}Go project deployed successfully.${NC}"
 
 echo "${YELLOW}Step 7/7: Building package with Artifactory...${NC}"
-jfrog rt bp "$MODULE_NAME" "$VERSION"
+jfrog rt bp "$MODULE_NAME" "$VERSION" || {
+  echo "${RED}Failed to build package with Artifactory.${NC}"
+  exit 1
+}
 echo "${GREEN}Package build completed successfully.${NC}"
