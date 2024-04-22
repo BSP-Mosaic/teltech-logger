@@ -22,7 +22,7 @@ If your project includes a go.mod file with a defined module name, deploy by spe
 
 ### Deploy with Custom Module Name
 
-If your project does not have a go.mod file or you wish to specify a different module name, use:
+If your project does not have a go.mod, use:
 
 ```sh
 ./deploy.sh bendingspoons.com/logger v1.0.0
