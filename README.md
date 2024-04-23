@@ -4,12 +4,35 @@ Super simple structured logging mechanism for Go projects with [Stackdriver form
 
 ## Installation
 
-``` sh
+```sh
 go get -u github.com/BSP-Mosaic/teltech-logger
 ```
 
+## Deployment Instructions
+
+Use the deploy.sh script to deploy your Go project to the Artifactory go-local repository. Here's how you can do it:
+
+### Deploy Using Existing Module Definition
+
+If your project includes a go.mod file with a defined module name, deploy by specifying only the version:
+
+```sh
+./deploy.sh v1.0.0
+```
+
+### Deploy with Custom Module Name
+
+If your project does not have a go.mod, use:
+
+```sh
+./deploy.sh bendingspoons.com/logger v1.0.0
+```
+
+Ensure that ARTIFACTORY_ACCESS_TOKEN, ARTIFACTORY_URL, and ARTIFACTORY_USERNAME are present in the environment variables before using the script.
+
 ## Usage
-``` go
+
+```go
 package main
 
 import (
@@ -56,28 +79,29 @@ func main() {
 ## Output
 
 The errors require a specific JSON format for them to be ingested and processed by Google Cloud Platform Stackdriver Logging and Error Reporting. See: [https://cloud.google.com/error-reporting/docs/formatting-error-messages](https://cloud.google.com/error-reporting/docs/formatting-error-messages). The resulting output has the following format, optional fields are... well, optional:
+
 ```json
-       {
-          "severity": "ERROR",
-          "eventTime": "2017-04-26T02:29:33-04:00",
-          "message": "An error just happened!",
-          "serviceContext": {
-             "service": "my-gce-project-id",
-             "version": "1.0"
-          },
-          "context": {
-            "data": {
-              "clientIP": "127.0.0.1",
-              "userAgent": "Mosaic 1.0"
-            },
-            "reportLocation": {
-              "filePath": "\/Users\/mc\/Documents\/src\/github.com\/macuenca\/apex\/mauricio.go",
-              "functionName": "unknown",
-              "lineNumber": 15
-            }
-          },
-         "stacktrace": "goroutine 1 [running]:main.main()\n\t\/github.com\/macuenca\/mauricio.go:15 +0x1a9\n"
-       }
+{
+  "severity": "ERROR",
+  "eventTime": "2017-04-26T02:29:33-04:00",
+  "message": "An error just happened!",
+  "serviceContext": {
+    "service": "my-gce-project-id",
+    "version": "1.0"
+  },
+  "context": {
+    "data": {
+      "clientIP": "127.0.0.1",
+      "userAgent": "Mosaic 1.0"
+    },
+    "reportLocation": {
+      "filePath": "/Users/mc/Documents/src/github.com/macuenca/apex/mauricio.go",
+      "functionName": "unknown",
+      "lineNumber": 15
+    }
+  },
+  "stacktrace": "goroutine 1 [running]:main.main()\n\t/github.com/macuenca/mauricio.go:15 +0x1a9\n"
+}
 ```
 
 ## License
