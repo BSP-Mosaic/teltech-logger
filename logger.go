@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+	sentry "github.com/getsentry/sentry-go"
+
 )
 
 type severity int
@@ -296,6 +298,13 @@ func (l *Log) Error(message string) {
 func (l *Log) Errorf(message string, args ...interface{}) {
 	l.error(ERROR.String(), fmt.Sprintf(message, args...))
 }
+
+// The same as ErrorfSentry but also captures the message on sentry
+func (l *Log) ErrorfSentry(message string, args ...interface{}) {
+	l.error(ERROR.String(), fmt.Sprintf(message, args...))
+	sentry.CaptureMessage(message)
+}
+
 
 // Fatal is equivalent to Error() followed by a call to os.Exit(1).
 // It prints out a message with CRITICAL severity level
